@@ -12,13 +12,18 @@ func newUserCli() *userCli {
 }
 
 type userCli struct {
-	rw    sync.RWMutex
+	rw sync.RWMutex
+	o  sync.Once
+
 	id    int64
 	token string
 }
 
 func (s *userCli) loop() {
 	for range time.After(time.Minute * 20) {
+		if len(s.token) == 0 || s.id <= 0 {
+			continue
+		}
 		if _, err := s.UserInfo(); err != nil && api.opt.Err != nil {
 			api.opt.Err(err)
 		}
@@ -53,8 +58,9 @@ func (s *userCli) Login() error {
 		s.id = rs.UserID
 		s.token = rs.AccessToken
 		s.rw.Unlock()
-
-		go s.loop()
+		s.o.Do(func() {
+			go s.loop()
+		})
 	}
 	return nil
 }
@@ -69,4 +75,21 @@ func (s *userCli) UserInfo() (*idp.UserInfo, error) {
 		return nil, err
 	}
 	return rs, nil
+}
+
+func (s *userCli) ProfileInfo() (*idp.ProfileInfo, error) {
+	rs := &idp.ProfileInfo{}
+	if err := Do("/idp/idp/profile", &basic.Empty{}, rs); err != nil {
+		return nil, err
+	}
+	return rs, nil
+}
+
+func (s *userCli) ChangePwd(oldPwd, newPwd string) error {
+	rq := &idp.ChangePasswordRequest{
+		Password:        oldPwd,
+		NewPassword:     newPwd,
+		ConfirmPassword: newPwd,
+	}
+	return Do("/idp/idp/ChangePassword", rq, &basic.Empty{})
 }
