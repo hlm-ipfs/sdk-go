@@ -32,6 +32,22 @@ func (s *marketCli) MarketCount() (*market.CountResponse, error) {
 	return rs, nil
 }
 
+func (s *marketCli) CreateStorage(in *market.StorageCreateRequest) (string, error) {
+	rs := &basic.String{}
+	if err := Do("/market/storage/create", in, rs); err != nil {
+		return "", err
+	}
+	return rs.Value, nil
+}
+
+func (s *marketCli) UpdateStorage(in *market.StorageUpdateRequest) error {
+	return Do("/market/storage/update", in, &basic.Empty{})
+}
+
+func (s *marketCli) RemoveStorage(orderNo string) error {
+	return Do("/market/storage/remove", &basic.String{Value: orderNo}, &basic.Empty{})
+}
+
 func (s *marketCli) StorageOrders(in *market.StorageListRequest) (*market.StorageListResponse, error) {
 	rs := &market.StorageListResponse{}
 	if err := Do("/market/storage/list", in, rs); err != nil {
