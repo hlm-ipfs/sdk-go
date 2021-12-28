@@ -69,7 +69,9 @@ func Do(path string, rq proto.Message, rs proto.Message) error {
 		return err
 	} else {
 		req.Header.Add("ContentType", "application/json")
-		req.Header.Add("Authorization", "Idp "+api.Token())
+		if tk := api.Token(); len(tk) > 0 {
+			req.Header.Add("Authorization", "Idp "+tk)
+		}
 	}
 	if rsp, err = http.DefaultClient.Do(req); err != nil {
 		return err
